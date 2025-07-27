@@ -1,7 +1,7 @@
 package com.example.art_gal.controller;
 
 import com.example.art_gal.entity.User;
-import com.example.art_gal.payload.LoginRequest;
+import com.example.art_gal.payload.LoginDto;
 import com.example.art_gal.payload.LoginResponse;
 import com.example.art_gal.payload.UserDetailsResponse;
 import com.example.art_gal.security.JwtTokenProvider;
@@ -17,27 +17,26 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     @Autowired
-    AuthenticationManager authenticationManager;
+    private AuthenticationManager authenticationManager;
 
     @Autowired
-    JwtTokenProvider jwtTokenProvider;
+    private JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
-
+    public ResponseEntity<?> login(@RequestBody LoginDto loginDto) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsernameOrEmail(), loginRequest.getPassword()));
+                new UsernamePasswordAuthenticationToken(loginDto.getUsernameOrEmail(), loginDto.getPassword()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtTokenProvider.generateToken(authentication);
 
-        // VIỆC ÉP KIỂU BÂY GIỜ SẼ THÀNH CÔNG VÌ User ĐÃ LÀ UserDetails
+        String token = jwtTokenProvider.generateToken(authentication);
+
+        // ✅ BÂY GIỜ VIỆC ÉP KIỂU SẼ THÀNH CÔNG
         User userDetails = (User) authentication.getPrincipal();
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -48,6 +47,6 @@ public class AuthController {
                 roles
         );
 
-        return ResponseEntity.ok(new LoginResponse(jwt, userDetailsResponse));
+        return ResponseEntity.ok(new LoginResponse(token, userDetailsResponse));
     }
 }

@@ -1,8 +1,8 @@
 package com.example.art_gal.config;
 
-import com.example.art_gal.repository.UserRepository;
+import com.example.art_gal.security.CustomUserDetailsService;
 import com.example.art_gal.security.JwtAuthenticationFilter;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.art_gal.security.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,8 +10,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -21,17 +19,19 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final CustomUserDetailsService userDetailsService;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-
+    // ✅ SỬA LẠI: Dùng constructor injection thay vì @Autowired
+    public SecurityConfig(CustomUserDetailsService userDetailsService, JwtTokenProvider jwtTokenProvider) {
+        this.userDetailsService = userDetailsService;
+        this.jwtTokenProvider = jwtTokenProvider;
+    }
+    
+    // ✅ BƯỚC 1: Tạo bean cho JwtAuthenticationFilter
     @Bean
-    public UserDetailsService userDetailsService() {
-        // BÂY GIỜ CODE NÀY SẼ HOẠT ĐỘNG VÌ User LÀ MỘT UserDetails
-        return username -> userRepository.findByUsernameOrEmail(username, username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    public JwtAuthenticationFilter jwtAuthenticationFilter(){
+        return new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService);
     }
 
     @Bean
@@ -45,7 +45,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 );
 
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        // ✅ BƯỚC 2: Thêm filter vào chuỗi bảo mật
+        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

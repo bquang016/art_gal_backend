@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired; // Sẽ được xóa ở bước sau
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,13 +16,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-// Bỏ @Component để tránh lỗi circular dependency
+// Bỏ @Component và @Autowired để sửa lỗi circular dependency ở SecurityConfig
+// @Component // Xóa dòng này
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
 
-    // Dùng constructor để inject dependency
+    // Dùng constructor để SecurityConfig có thể tạo và inject dependency
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserDetailsService userDetailsService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
@@ -35,8 +37,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = getTokenFromRequest(request);
 
         if(StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)){
-            // ✅ SỬA LẠI: Đổi getUsername thành getUsernameFromToken
-            String username = jwtTokenProvider.getUsernameFromToken(token);
+            // ✅ SỬA LẠI: Tên phương thức chính xác là "getUsername"
+            String username = jwtTokenProvider.getUsername(token);
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
