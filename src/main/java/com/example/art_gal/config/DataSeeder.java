@@ -1,7 +1,9 @@
 package com.example.art_gal.config;
 
+import com.example.art_gal.entity.PaymentMethod;
 import com.example.art_gal.entity.Role;
 import com.example.art_gal.entity.User;
+import com.example.art_gal.repository.PaymentMethodRepository;
 import com.example.art_gal.repository.RoleRepository;
 import com.example.art_gal.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +11,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 
@@ -25,43 +26,46 @@ public class DataSeeder implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private PaymentMethodRepository paymentMethodRepository;
+
     @Override
     public void run(String... args) throws Exception {
-        // ✅ SỬA LẠI: Sử dụng String cho tên vai trò, không dùng ERole
+        seedRolesAndUsers();
+        seedPaymentMethods();
+    }
+
+    private void seedRolesAndUsers() {
         String adminRoleName = "ROLE_ADMIN";
         String nhanvienRoleName = "ROLE_NHANVIEN";
 
-        // Kiểm tra và tạo vai trò ADMIN nếu chưa tồn tại
         if (roleRepository.findByName(adminRoleName).isEmpty()) {
             Role role = new Role();
             role.setName(adminRoleName);
             roleRepository.save(role);
         }
 
-        // Kiểm tra và tạo vai trò NHANVIEN nếu chưa tồn tại
         if (roleRepository.findByName(nhanvienRoleName).isEmpty()) {
             Role role = new Role();
             role.setName(nhanvienRoleName);
             roleRepository.save(role);
         }
 
-        // Kiểm tra và tạo người dùng 'admin' nếu chưa tồn tại
         if (userRepository.findByUsername("admin").isEmpty()) {
             Role adminRole = roleRepository.findByName(adminRoleName)
                     .orElseThrow(() -> new RuntimeException("Error: Role ADMIN is not found."));
-            Role userRoleForAdmin = roleRepository.findByName(nhanvienRoleName)
-                    .orElseThrow(() -> new RuntimeException("Error: Role NHANVIEN is not found."));
 
             User admin = new User();
             admin.setName("Quang Đẹp Trai");
             admin.setUsername("admin");
             admin.setEmail("admin@artgallery.com");
             admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setRoles(new HashSet<>(Arrays.asList(adminRole, userRoleForAdmin)));
+            
+            // ✅ SỬA LẠI: Chỉ gán duy nhất ROLE_ADMIN cho tài khoản admin
+            admin.setRoles(new HashSet<>(Collections.singletonList(adminRole)));
             userRepository.save(admin);
         }
 
-        // Kiểm tra và tạo người dùng 'nhanvien' nếu chưa tồn tại
         if (userRepository.findByUsername("nhanvien").isEmpty()) {
             Role userRole = roleRepository.findByName(nhanvienRoleName)
                     .orElseThrow(() -> new RuntimeException("Error: Role NHANVIEN is not found."));
@@ -73,6 +77,42 @@ public class DataSeeder implements CommandLineRunner {
             nhanvien.setPassword(passwordEncoder.encode("nhanvien123"));
             nhanvien.setRoles(new HashSet<>(Collections.singletonList(userRole)));
             userRepository.save(nhanvien);
+        }
+    }
+    
+    private void seedPaymentMethods() {
+        if (paymentMethodRepository.count() == 0) {
+            PaymentMethod cash = new PaymentMethod();
+            cash.setMethodKey("cash");
+            cash.setName("Tiền mặt");
+            cash.setDescription("Thanh toán trực tiếp bằng tiền mặt tại quầy.");
+            cash.setEnabled(true);
+            cash.setConfigurable(false);
+            paymentMethodRepository.save(cash);
+
+            PaymentMethod qrBank = new PaymentMethod();
+            qrBank.setMethodKey("qr_bank");
+            qrBank.setName("Chuyển khoản ngân hàng");
+            qrBank.setDescription("Quét mã QR để chuyển khoản qua ứng dụng ngân hàng.");
+            qrBank.setEnabled(true);
+            qrBank.setConfigurable(true);
+            paymentMethodRepository.save(qrBank);
+
+            PaymentMethod momo = new PaymentMethod();
+            momo.setMethodKey("qr_momo");
+            momo.setName("Ví điện tử MoMo");
+            momo.setDescription("Quét mã QR để thanh toán qua ví MoMo.");
+            momo.setEnabled(false);
+            momo.setConfigurable(true);
+            paymentMethodRepository.save(momo);
+
+            PaymentMethod zaloPay = new PaymentMethod();
+            zaloPay.setMethodKey("qr_zalopay");
+            zaloPay.setName("Ví điện tử ZaloPay");
+            zaloPay.setDescription("Quét mã QR để thanh toán qua ví ZaloPay.");
+            zaloPay.setEnabled(false);
+            zaloPay.setConfigurable(true);
+            paymentMethodRepository.save(zaloPay);
         }
     }
 }
