@@ -19,13 +19,10 @@ public class DataSeeder implements CommandLineRunner {
 
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private RoleRepository roleRepository;
-
     @Autowired
     private PasswordEncoder passwordEncoder;
-
     @Autowired
     private PaymentMethodRepository paymentMethodRepository;
 
@@ -52,29 +49,25 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         if (userRepository.findByUsername("admin").isEmpty()) {
-            Role adminRole = roleRepository.findByName(adminRoleName)
-                    .orElseThrow(() -> new RuntimeException("Error: Role ADMIN is not found."));
-
+            Role adminRole = roleRepository.findByName(adminRoleName).orElseThrow();
             User admin = new User();
             admin.setName("Quang Đẹp Trai");
             admin.setUsername("admin");
             admin.setEmail("admin@artgallery.com");
             admin.setPassword(passwordEncoder.encode("admin123"));
-            
-            // ✅ SỬA LẠI: Chỉ gán duy nhất ROLE_ADMIN cho tài khoản admin
+            admin.setStatus("Hoạt động");
             admin.setRoles(new HashSet<>(Collections.singletonList(adminRole)));
             userRepository.save(admin);
         }
 
         if (userRepository.findByUsername("nhanvien").isEmpty()) {
-            Role userRole = roleRepository.findByName(nhanvienRoleName)
-                    .orElseThrow(() -> new RuntimeException("Error: Role NHANVIEN is not found."));
-
+            Role userRole = roleRepository.findByName(nhanvienRoleName).orElseThrow();
             User nhanvien = new User();
             nhanvien.setName("Nhân Viên Bán Hàng");
             nhanvien.setUsername("nhanvien");
             nhanvien.setEmail("nhanvien@artgallery.com");
             nhanvien.setPassword(passwordEncoder.encode("nhanvien123"));
+            nhanvien.setStatus("Hoạt động");
             nhanvien.setRoles(new HashSet<>(Collections.singletonList(userRole)));
             userRepository.save(nhanvien);
         }
@@ -102,7 +95,7 @@ public class DataSeeder implements CommandLineRunner {
             momo.setMethodKey("qr_momo");
             momo.setName("Ví điện tử MoMo");
             momo.setDescription("Quét mã QR để thanh toán qua ví MoMo.");
-            momo.setEnabled(false);
+            momo.setEnabled(true); 
             momo.setConfigurable(true);
             paymentMethodRepository.save(momo);
 
@@ -110,7 +103,7 @@ public class DataSeeder implements CommandLineRunner {
             zaloPay.setMethodKey("qr_zalopay");
             zaloPay.setName("Ví điện tử ZaloPay");
             zaloPay.setDescription("Quét mã QR để thanh toán qua ví ZaloPay.");
-            zaloPay.setEnabled(false);
+            zaloPay.setEnabled(true); 
             zaloPay.setConfigurable(true);
             paymentMethodRepository.save(zaloPay);
         }

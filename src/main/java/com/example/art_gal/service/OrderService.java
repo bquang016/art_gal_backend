@@ -8,4 +8,7 @@ public interface OrderService {
     List<OrderDto> getAllOrders();
     OrderDto getOrderById(long id);
     OrderDto updateOrderStatus(long id, String status);
+    
+    // ✅ THÊM DÒNG NÀY ĐỂ SỬA LỖI
+    List<OrderDto> getOrdersByCustomerId(long customerId); 
 }

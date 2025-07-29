@@ -3,12 +3,16 @@ package com.example.art_gal.service.impl;
 import com.example.art_gal.entity.Artist;
 import com.example.art_gal.entity.Category;
 import com.example.art_gal.entity.Painting;
+import com.example.art_gal.entity.User; // ✅ THÊM DÒNG NÀY
 import com.example.art_gal.exception.ResourceNotFoundException;
 import com.example.art_gal.payload.PaintingDto;
 import com.example.art_gal.repository.ArtistRepository;
 import com.example.art_gal.repository.CategoryRepository;
 import com.example.art_gal.repository.PaintingRepository;
+import com.example.art_gal.repository.UserRepository; // ✅ THÊM DÒNG NÀY
+import com.example.art_gal.service.ActivityLogService; // ✅ THÊM DÒNG NÀY
 import com.example.art_gal.service.PaintingService;
+import org.springframework.security.core.context.SecurityContextHolder; // ✅ THÊM DÒNG NÀY
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,13 +24,19 @@ public class PaintingServiceImpl implements PaintingService {
     private final PaintingRepository paintingRepository;
     private final ArtistRepository artistRepository;
     private final CategoryRepository categoryRepository;
+    private final ActivityLogService activityLogService; // ✅ THÊM DÒNG NÀY
+    private final UserRepository userRepository;       // ✅ THÊM DÒNG NÀY
 
     public PaintingServiceImpl(PaintingRepository paintingRepository,
                                ArtistRepository artistRepository,
-                               CategoryRepository categoryRepository) {
+                               CategoryRepository categoryRepository,
+                               ActivityLogService activityLogService, // ✅ THÊM VÀO CONSTRUCTOR
+                               UserRepository userRepository) {       // ✅ THÊM VÀO CONSTRUCTOR
         this.paintingRepository = paintingRepository;
         this.artistRepository = artistRepository;
         this.categoryRepository = categoryRepository;
+        this.activityLogService = activityLogService; // ✅ THÊM DÒNG NÀY
+        this.userRepository = userRepository;         // ✅ THÊM DÒNG NÀY
     }
 
     @Override
@@ -62,6 +72,8 @@ public class PaintingServiceImpl implements PaintingService {
         painting.setName(paintingDto.getName());
         painting.setMaterial(paintingDto.getMaterial());
         painting.setImage(paintingDto.getImage());
+        painting.setSize(paintingDto.getSize());
+        painting.setDescription(paintingDto.getDescription());
         painting.setImportPrice(paintingDto.getImportPrice());
         painting.setSellingPrice(paintingDto.getSellingPrice());
         painting.setStatus(paintingDto.getStatus());
@@ -69,6 +81,15 @@ public class PaintingServiceImpl implements PaintingService {
         painting.setCategory(category);
 
         Painting updatedPainting = paintingRepository.save(painting);
+        
+        // ✅ GHI NHẬT KÝ
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User actor = userRepository.findByUsername(username).orElse(null);
+        if (actor != null) {
+            String details = String.format("Đã cập nhật thông tin cho tranh '%s' (ID: %d).", updatedPainting.getName(), updatedPainting.getId());
+            activityLogService.logActivity(actor, "CẬP NHẬT TRANH", details);
+        }
+
         return mapToDTO(updatedPainting);
     }
 
@@ -79,13 +100,14 @@ public class PaintingServiceImpl implements PaintingService {
         paintingRepository.delete(painting);
     }
 
-    // Helper methods
     private PaintingDto mapToDTO(Painting painting){
         PaintingDto paintingDto = new PaintingDto();
         paintingDto.setId(painting.getId());
         paintingDto.setName(painting.getName());
         paintingDto.setMaterial(painting.getMaterial());
         paintingDto.setImage(painting.getImage());
+        paintingDto.setSize(painting.getSize());
+        paintingDto.setDescription(painting.getDescription());
         paintingDto.setImportPrice(painting.getImportPrice());
         paintingDto.setSellingPrice(painting.getSellingPrice());
         paintingDto.setStatus(painting.getStatus());
@@ -105,6 +127,8 @@ public class PaintingServiceImpl implements PaintingService {
         painting.setName(paintingDto.getName());
         painting.setMaterial(paintingDto.getMaterial());
         painting.setImage(paintingDto.getImage());
+        painting.setSize(paintingDto.getSize());
+        painting.setDescription(paintingDto.getDescription());
         painting.setImportPrice(paintingDto.getImportPrice());
         painting.setSellingPrice(paintingDto.getSellingPrice());
         painting.setStatus(paintingDto.getStatus());

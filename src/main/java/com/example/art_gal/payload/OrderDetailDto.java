@@ -7,5 +7,6 @@ import java.math.BigDecimal;
 public class OrderDetailDto {
     private Long paintingId; // ID của bức tranh được mua
     private int quantity;
+    private String paintingName;
     private BigDecimal price; // Giá bán tại thời điểm tạo đơn
 }

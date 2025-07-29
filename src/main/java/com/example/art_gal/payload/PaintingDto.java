@@ -9,11 +9,11 @@ public class PaintingDto {
     private String name;
     private String material;
     private String image;
+    private String size;
+    private String description;
     private BigDecimal importPrice;
     private BigDecimal sellingPrice;
     private String status;
-
-    // ID for related entities
     private Long artistId;
     private Long categoryId;
 }

@@ -4,9 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails; // DÒNG IMPORT QUAN TRỌNG
+import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection; // DÒNG IMPORT QUAN TRỌNG
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 @Entity
 @Table(name = "users")
 @Data
-public class User implements UserDetails { // TRIỂN KHAI UserDetails
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,6 +31,8 @@ public class User implements UserDetails { // TRIỂN KHAI UserDetails
     @Column(nullable = false)
     private String password;
 
+    private String status; // VD: "Hoạt động", "Dừng hoạt động"
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "users_roles",
@@ -39,7 +41,6 @@ public class User implements UserDetails { // TRIỂN KHAI UserDetails
     )
     private Set<Role> roles = new HashSet<>();
 
-    // CÁC PHƯƠNG THỨC BẮT BUỘC TỪ UserDetails
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
@@ -64,6 +65,7 @@ public class User implements UserDetails { // TRIỂN KHAI UserDetails
 
     @Override
     public boolean isEnabled() {
-        return true;
+        // Trả về false nếu tài khoản không hoạt động
+        return "Hoạt động".equalsIgnoreCase(this.status);
     }
 }

@@ -1,6 +1,7 @@
 package com.example.art_gal.config;
 
 import com.example.art_gal.security.CustomUserDetailsService;
+import com.example.art_gal.security.JwtAuthenticationEntryPoint;
 import com.example.art_gal.security.JwtAuthenticationFilter;
 import com.example.art_gal.security.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
@@ -20,15 +21,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final JwtAuthenticationEntryPoint authenticationEntryPoint;
     private final JwtTokenProvider jwtTokenProvider;
 
-    // ✅ SỬA LẠI: Dùng constructor injection thay vì @Autowired
-    public SecurityConfig(CustomUserDetailsService userDetailsService, JwtTokenProvider jwtTokenProvider) {
+    public SecurityConfig(CustomUserDetailsService userDetailsService,
+                          JwtAuthenticationEntryPoint authenticationEntryPoint,
+                          JwtTokenProvider jwtTokenProvider) {
         this.userDetailsService = userDetailsService;
+        this.authenticationEntryPoint = authenticationEntryPoint;
         this.jwtTokenProvider = jwtTokenProvider;
     }
-    
-    // ✅ BƯỚC 1: Tạo bean cho JwtAuthenticationFilter
+
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(){
         return new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService);
@@ -38,6 +41,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
@@ -45,7 +49,6 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 );
 
-        // ✅ BƯỚC 2: Thêm filter vào chuỗi bảo mật
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

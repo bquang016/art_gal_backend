@@ -18,8 +18,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-        // ✅ SỬA LẠI: Trả về trực tiếp đối tượng User entity.
-        return userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
+        User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email: " + usernameOrEmail));
+
+        // Logic kiểm tra tài khoản bị vô hiệu hóa đã được chuyển vào User entity
+        // thông qua phương thức isEnabled()
+        return user;
     }
 }

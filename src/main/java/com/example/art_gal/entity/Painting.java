@@ -19,23 +19,25 @@ public class Painting {
     @Column(nullable = false)
     private String name;
 
-    private String material; // Chất liệu
-    private String image; // URL to the image
+    private String material;
+    private String image;
+    private String size; // Kích thước tranh, vd: "80x120 cm"
+    
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
-    @Column(precision = 19, scale = 4) // Phù hợp cho số tiền lớn
+    @Column(precision = 19, scale = 4)
     private BigDecimal importPrice;
 
     @Column(precision = 19, scale = 4)
     private BigDecimal sellingPrice;
 
-    private String status; // e.g., "Đang bán", "Đã bán", "Dừng bán"
+    private String status;
 
-    // Mối quan hệ: Nhiều Painting thuộc về một Artist
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "artist_id", nullable = false)
     private Artist artist;
 
-    // Mối quan hệ: Nhiều Painting thuộc về một Category
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;

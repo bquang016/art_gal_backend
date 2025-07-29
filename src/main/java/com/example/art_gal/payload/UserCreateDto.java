@@ -9,5 +9,8 @@ public class UserCreateDto {
     private String username;
     private String email;
     private String password;
-    private Set<String> roles; // VD: ["ADMIN", "NHANVIEN"]
+    private Set<String> roles;
+    
+    // ✅ THÊM TRƯỜNG NÀY
+    private String status;
 }

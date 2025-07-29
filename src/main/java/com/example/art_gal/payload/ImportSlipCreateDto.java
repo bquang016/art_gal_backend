@@ -6,7 +6,5 @@ import java.util.List;
 @Data
 public class ImportSlipCreateDto {
     private Long artistId;
-    private Long userId;
-    private String notes;
     private List<ImportSlipItemDto> items;
 }

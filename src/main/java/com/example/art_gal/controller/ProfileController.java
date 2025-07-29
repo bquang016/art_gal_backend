@@ -1,43 +1,39 @@
 package com.example.art_gal.controller;
 
+import com.example.art_gal.payload.ChangePasswordDto;
+import com.example.art_gal.payload.ProfileDto;
 import com.example.art_gal.payload.UserDto;
-import com.example.art_gal.service.UserService;
+import com.example.art_gal.service.ProfileService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.example.art_gal.repository.UserRepository;
-import com.example.art_gal.entity.User;
-
 
 @RestController
 @RequestMapping("/api/profile")
 public class ProfileController {
 
-    private final UserRepository userRepository;
-    // Inject các service cần thiết khác nếu cần
+    private final ProfileService profileService;
 
-    public ProfileController(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public ProfileController(ProfileService profileService) {
+        this.profileService = profileService;
     }
 
-    // API lấy thông tin của user đang đăng nhập
     @GetMapping("/me")
-    public ResponseEntity<UserDto> getCurrentUser(Authentication authentication) {
-        User user = userRepository.findByUsernameOrEmail(authentication.getName(), authentication.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-        // Map User entity to UserDto
-        UserDto userDto = new UserDto();
-        userDto.setId(user.getId());
-        userDto.setName(user.getName());
-        userDto.setUsername(user.getUsername());
-        userDto.setEmail(user.getEmail());
-        // Lấy thêm SĐT và các thông tin khác nếu bạn đã thêm vào User entity
-        // userDto.setPhone(user.getPhone()); 
-
-        return ResponseEntity.ok(userDto);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserDto> getCurrentUserProfile() {
+        return ResponseEntity.ok(profileService.getCurrentUser());
     }
-    
-    // Bạn có thể thêm các API để cập nhật thông tin hoặc đổi mật khẩu ở đây
+
+    @PutMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserDto> updateCurrentUserProfile(@RequestBody ProfileDto profileDto) {
+        return ResponseEntity.ok(profileService.updateProfile(profileDto));
+    }
+
+    @PostMapping("/change-password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> changeCurrentUserPassword(@RequestBody ChangePasswordDto changePasswordDto) {
+        profileService.changePassword(changePasswordDto);
+        return ResponseEntity.ok("Đổi mật khẩu thành công.");
+    }
 }

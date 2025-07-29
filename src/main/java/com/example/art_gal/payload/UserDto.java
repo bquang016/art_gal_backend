@@ -11,5 +11,5 @@ public class UserDto {
     private String email;
     private Set<String> roles;
     // Thêm trường status nếu bạn có trong Entity User
-    // private String status; 
+    private String status; 
 }

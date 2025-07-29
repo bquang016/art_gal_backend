@@ -1,13 +1,17 @@
 package com.example.art_gal.service.impl;
 
 import com.example.art_gal.entity.*;
+import com.example.art_gal.exception.APIException;
 import com.example.art_gal.exception.ResourceNotFoundException;
 import com.example.art_gal.payload.ImportSlipCreateDto;
 import com.example.art_gal.payload.ImportSlipDetailDto;
 import com.example.art_gal.payload.ImportSlipDto;
 import com.example.art_gal.payload.ImportSlipItemDto;
 import com.example.art_gal.repository.*;
+import com.example.art_gal.service.ActivityLogService;
 import com.example.art_gal.service.ImportSlipService;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,13 +30,15 @@ public class ImportSlipServiceImpl implements ImportSlipService {
     private final ArtistRepository artistRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
+    private final ActivityLogService activityLogService;
 
-    public ImportSlipServiceImpl(ImportSlipRepository i, PaintingRepository p, ArtistRepository a, CategoryRepository c, UserRepository u) {
+    public ImportSlipServiceImpl(ImportSlipRepository i, PaintingRepository p, ArtistRepository a, CategoryRepository c, UserRepository u, ActivityLogService activityLogService) {
         this.importSlipRepository = i;
         this.paintingRepository = p;
         this.artistRepository = a;
         this.categoryRepository = c;
         this.userRepository = u;
+        this.activityLogService = activityLogService;
     }
 
     @Override
@@ -40,23 +46,33 @@ public class ImportSlipServiceImpl implements ImportSlipService {
     public void createImportSlip(ImportSlipCreateDto createDto) {
         Artist artist = artistRepository.findById(createDto.getArtistId())
                 .orElseThrow(() -> new ResourceNotFoundException("Artist", "id", createDto.getArtistId()));
-        User user = userRepository.findById(createDto.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", createDto.getUserId()));
+        
+        // Lấy đúng người dùng đang đăng nhập từ SecurityContext
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User actor = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", 0));
 
         ImportSlip slip = new ImportSlip();
         slip.setArtist(artist);
-        slip.setUser(user);
+        slip.setUser(actor); // Gán người tạo phiếu là người đang đăng nhập
         slip.setImportDate(new Date());
 
         Set<ImportSlipDetail> details = new HashSet<>();
         BigDecimal totalValue = BigDecimal.ZERO;
+        int itemCount = createDto.getItems().size();
 
         for (ImportSlipItemDto itemDto : createDto.getItems()) {
+            if (paintingRepository.existsByNameAndArtistId(itemDto.getName(), createDto.getArtistId())) {
+                throw new APIException(HttpStatus.BAD_REQUEST, "Tranh '" + itemDto.getName() + "' của họa sĩ này đã tồn tại.");
+            }
+
             Category category = categoryRepository.findById(itemDto.getCategoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Category", "id", itemDto.getCategoryId()));
             
             Painting newPainting = new Painting();
             newPainting.setName(itemDto.getName());
+            newPainting.setSize(itemDto.getSize());
+            newPainting.setDescription(itemDto.getDescription());
             newPainting.setArtist(artist);
             newPainting.setCategory(category);
             newPainting.setMaterial(itemDto.getMaterial());
@@ -76,7 +92,12 @@ public class ImportSlipServiceImpl implements ImportSlipService {
         slip.setTotalValue(totalValue);
         slip.setImportSlipDetails(details);
 
-        importSlipRepository.save(slip);
+        ImportSlip savedSlip = importSlipRepository.save(slip);
+
+        // Ghi nhật ký với đúng người dùng
+        String logDetails = String.format("Đã tạo phiếu nhập #%d từ nhà cung cấp '%s' với %d sản phẩm.",
+                savedSlip.getId(), artist.getName(), itemCount);
+        activityLogService.logActivity(actor, "TẠO PHIẾU NHẬP", logDetails);
     }
 
     @Override
